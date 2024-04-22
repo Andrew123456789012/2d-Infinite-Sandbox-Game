@@ -2,19 +2,22 @@ import random
 import time
 from replit import clear
 from blessed import Terminal
-from colorama import Fore,Back
+from colorama import Fore, Back
+
 
 
 grass = f"{Fore.LIGHTGREEN_EX}~ {Fore.WHITE}"
 wall = f"{Fore.BLACK}x {Fore.WHITE}"
+placed_wall = f"{Fore.BLACK}X {Fore.WHITE}"
 broken_wall = f"{Fore.BLACK}- {Fore.WHITE}"
 spike = f"{Fore.RED}ㅅ{Fore.WHITE}"
 flat_spike = f"{Fore.RED}ㅡ{Fore.WHITE}"
 chest = f"{Fore.YELLOW}[]{Fore.WHITE}"
+looted_chest = f"{Fore.YELLOW}[ {Fore.WHITE}"
 heart = f"{Fore.RED}♡ {Fore.WHITE}"
 
-loot = ["hammer", "pickaxe"]
-loot_weights = [1, 1]
+loot = ["hammer", "pickaxe", "block"]
+loot_weights = [1, 1, 1]
 
 
 class World:
@@ -53,16 +56,16 @@ class World:
 
 class Player:
 
-  def __init__(self, icon, coordinates, max_health = 3, hammers = 1, pickaxes = 1):
+  def __init__(self, icon, coordinates, max_health=3, hammers=1, pickaxes=1):
     self.icon = icon
     self.coordinates = coordinates
-    self.direction = "NORTH"
+    self.direction = "N"
     self.max_health = max_health
     self.health = max_health
     self.hammers = hammers
     self.pickaxes = pickaxes
     self.blocks = 0
-    
+    self.gold = 0
 
 
 def display(board, boardrange, players):
@@ -84,7 +87,7 @@ def center_to_range(center, radius):
                                                      center[1] + radius))
 
 
-w = World([grass,wall,spike,chest], [20, 5, 1, 0.1], 5)
+w = World([grass, wall, spike, chest], [20, 5, 1, 0.1], 10)
 input("press enter to start")
 
 while True:
@@ -92,89 +95,107 @@ while True:
   while True:  #game loop
     clear()
     board = w.get_visible_window(p.coordinates[0], p.coordinates[1])
-  
+
     #prints out the full display
-    print(f"({p.coordinates[0]}, {p.coordinates[1] * -1})")
-    print(f"FACING: {p.direction}")
-    print(f"HAMMERS: {p.hammers}")
-    print(f"PICKAXES: {p.pickaxes}")
-    print(f"BLOCKS: {p.blocks}")
+    print(f"({p.coordinates[0]}, {p.coordinates[1] * -1}) {p.direction}")
     print("HEALTH: " + heart * p.health + "X " * (p.max_health - p.health))
-    print("-" * 24)
+    print(f"BLOCKS: {p.blocks}  GOLD: {p.gold}")
+    print(f"HAMMERS: {p.hammers}  PICKAXES: {p.pickaxes}")
+    print("-" * 44)
     display(board, center_to_range(p.coordinates, w.radius), [p])
-    print("-" * 24)
-    
+    print("-" * 44)
+
     with Terminal().cbreak():  #input detection and player movement
-      print("use wasd to move and e to place a block")
+      print("use wasd to move, e to place blocks and q to break blocks")
       move = Terminal().inkey(timeout=60)
       candidate_move = p.coordinates.copy()
-  
+
       if move == "w":
-        p.direction = "NORTH"
+        p.direction = "N"
         candidate_move[1] -= 1
       elif move == "s":
-        p.direction = "SOUTH"
+        p.direction = "S"
         candidate_move[1] += 1
       elif move == "a":
-        p.direction = "WEST"
+        p.direction = "W"
         candidate_move[0] -= 1
       elif move == "d":
-        p.direction = "EAST"
+        p.direction = "E"
         candidate_move[0] += 1
-        
-      elif move == "e":
-        if p.direction == "NORTH":
+
+      elif move == "e":#placing
+        if p.direction == "N":
           candidate_move[1] -= 1
-        elif p.direction == "SOUTH":
+        elif p.direction == "S":
           candidate_move[1] += 1
-        elif p.direction == "WEST":
+        elif p.direction == "W":
           candidate_move[0] -= 1
-        elif p.direction == "EAST":
+        elif p.direction == "E":
           candidate_move[0] += 1
-        if w.get_board_value(candidate_move) != wall and p.blocks > 0:
-          w.set_board_value(candidate_move, wall)
+        if w.get_board_value(candidate_move) == grass and p.blocks > 0:
+          w.set_board_value(candidate_move, placed_wall)
           p.blocks -= 1
-
         candidate_move = p.coordinates
+
+      
+      elif move == "q":#breaking
+        if p.direction == "N":
+          candidate_move[1] -= 1
+        elif p.direction == "S":
+          candidate_move[1] += 1
+        elif p.direction == "W":
+          candidate_move[0] -= 1
+        elif p.direction == "E":
+          candidate_move[0] += 1
           
-
-      if w.get_board_value(candidate_move) == broken_wall:
-        w.set_board_value(candidate_move, grass)
-      
-      if w.get_board_value(candidate_move) == wall:
-        if p.pickaxes > 0:
+        if w.get_board_value(candidate_move) == placed_wall:
+          w.set_board_value(candidate_move, grass)
+          p.blocks += 1
+          
+        if w.get_board_value(candidate_move) == wall and p.pickaxes > 0:
           p.pickaxes -= 1
-          p.blocks += random.randint(1, 3)
-          if p.blocks > 64:
-            p.blocks = 64
+          p.blocks += random.randint(1, 5)
           w.set_board_value(candidate_move, broken_wall)
-        candidate_move = p.coordinates
-  
-      if w.get_board_value(candidate_move) == flat_spike:
-        w.set_board_value(candidate_move, grass)
-      
-      if w.get_board_value(candidate_move) == spike:
-        if p.hammers > 0:
+
+
+        if w.get_board_value(candidate_move) == spike and p.hammers > 0:
           p.hammers -= 1
           w.set_board_value(candidate_move, flat_spike)
-          candidate_move = p.coordinates
-        else:
-          p.health -= 1
         
+        candidate_move = p.coordinates
+
+
+      #move validation
+      if w.get_board_value(candidate_move) == broken_wall:
+        w.set_board_value(candidate_move, grass)
+
+      if w.get_board_value(candidate_move) == wall:
+        candidate_move = p.coordinates
+
+      if w.get_board_value(candidate_move) == placed_wall:
+        candidate_move = p.coordinates
+
+      if w.get_board_value(candidate_move) == flat_spike:
+        w.set_board_value(candidate_move, grass)
+
+      if w.get_board_value(candidate_move) == spike:
+        p.health -= 1
+
       if w.get_board_value(candidate_move) == chest:
         chest_loot = random.choices(loot, weights=loot_weights, k=1)
-        
         if chest_loot == ["hammer"]:
-          p.hammers += random.randint(1,3)
+          p.hammers += random.randint(1, 3)
         elif chest_loot == ["pickaxe"]:
-          p.pickaxes += random.randint(1,3)
-        
-        w.set_board_value(candidate_move, grass)
-        
+          p.pickaxes += random.randint(1, 3)
+        elif chest_loot == ["block"]:
+          p.blocks += random.randint(1, 3)
+
+        w.set_board_value(candidate_move, looted_chest)
+
       p.coordinates = candidate_move
-        
+
     
-    if p.health == 0: #Death
+    if p.health == 0:#Death
       clear()
       print(f"({p.coordinates[0]}, {p.coordinates[1] * -1})")
       print(f"HAMMERS: {p.hammers}")
@@ -183,8 +204,8 @@ while True:
       print("-" * 24)
       display(board, center_to_range(p.coordinates, w.radius), [p])
       print("-" * 24)
-      print("you where impaled (x_x)")
-      input("press enter to make a new world")
+      print("you died (x_x)")
+      input("press enter to respawn")
       break
-  
+
     time.sleep(0.2)
