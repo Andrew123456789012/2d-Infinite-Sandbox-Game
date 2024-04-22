@@ -156,12 +156,7 @@ while True:
           p.pickaxes -= 1
           p.blocks += random.randint(1, 5)
           w.set_board_value(candidate_move, broken_wall)
-
-
-        if w.get_board_value(candidate_move) == spike and p.hammers > 0:
-          p.hammers -= 1
-          w.set_board_value(candidate_move, flat_spike)
-        
+          
         candidate_move = p.coordinates
 
 
@@ -179,8 +174,14 @@ while True:
         w.set_board_value(candidate_move, grass)
 
       if w.get_board_value(candidate_move) == spike:
-        p.health -= 1
+        if p.hammers > 0:
+          p.hammers -= 1
+          w.sboard_value(candidate_move, flat_spike)
+          candidate_move = p.coordinates
+        else:
+          p.health -= 1
 
+      
       if w.get_board_value(candidate_move) == chest:
         chest_loot = random.choices(loot, weights=loot_weights, k=1)
         if chest_loot == ["hammer"]:
