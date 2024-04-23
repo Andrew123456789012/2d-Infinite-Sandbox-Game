@@ -26,7 +26,7 @@ class World:
   def __init__(self, choices, weights, radius):
     self.board = {
         (0, 0): grass,
-        (-5, 5): merchant
+        (random.choice([5, -5]), random.choice([5, -5])): merchant
     }
     self.radius = radius
     self.choices = choices
@@ -98,7 +98,8 @@ def merchant_interaction(player):
     print("2. pickaxe (1 gold)")
     print("3. block (1 gold)")
     print("4. heart (10 gold)")
-    print("5. exit")
+    print("5. heart slot (20 gold)")
+    print("6. exit")
     choice = input("enter your choice: ")
     
     if choice == "1" and player.gold > 0:
@@ -114,10 +115,15 @@ def merchant_interaction(player):
       player.gold -= 1
       print("you bought a block!")
     elif choice == "4" and player.gold > 9 and player.health < 3:
-      player.max_health += 1
+      player.health += 1
       player.gold -= 10
       print("you bought a heart!")
-    elif choice == "5":
+    elif choice == "5" and player.gold > 19:
+      player.max_health += 1
+      player.health = player.max_health
+      player.gold -= 20
+      print("you bought a heart slot!")
+    elif choice == "6":
       print("you exit the merchant.")
       break
     else:
@@ -126,7 +132,7 @@ def merchant_interaction(player):
       
       
 
-w = World([grass, wall, spike, chest, merchant], [20, 5, 1, 0.1, 0.01], 7)
+w = World([grass, wall, spike, chest, merchant], [20, 5, 1, 0.1, 0.001], 7)
 input("press enter to start")
 
 while True:
