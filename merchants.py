@@ -32,7 +32,7 @@ def merchant_interaction(player):
       player.health += 1
       player.gold -= 10
       print("you bought a heart!")
-    elif choice == "5" and player.gold > 19:
+    elif choice == "5" and player.gold > 19 and p.health <10:
       player.max_health += 1
       player.health = player.max_health
       player.gold -= 20
@@ -43,4 +43,5 @@ def merchant_interaction(player):
     else:
       print("invalid choice or not enough gold.")
       input("press enter to continue.")
-  print({Fore.WHITE})
+  print(Fore.WHITE)
+
