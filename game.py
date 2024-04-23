@@ -113,7 +113,7 @@ def death(p, w):
 
 
 def game():
-  p = Player('ツ', coordinates=[0, 0])
+  p = Player('ツ', coordinates=[0, 0, 0])
   u = World([stone_floor, wall, spike, ore, chest, merchant, exit],
             [2, 2, 2, 0.1, 0.01, 0.005, 0.001], 5, stone_floor, exit)
   g = World([grass, wall, spike, chest, merchant, mineshaft],
