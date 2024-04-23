@@ -112,7 +112,7 @@ def death(p, w):
 
 
 def game():
-  p = Player('ツ', coordinates=[0, 0, 0])
+  p = Player('ツ', coordinates=[0, 0, 1])
   u = World([stone_floor, wall, spike, ore, chest, merchant, exit],
             [2, 2, 2, 0.1, 0.01, 0.005, 0.001], 5, stone_floor, exit)
   g = World([grass, wall, spike, chest, merchant, mineshaft],
@@ -149,7 +149,7 @@ def game():
     board = w.get_visible_window(p.coordinates[0], p.coordinates[1])
 
     #prints out the full display
-    print(f"({p.coordinates[0]},{p.coordinates[1]*-1},{p.coordinates[2]}){p.direction}")
+    print(f"({p.coordinates[0]},{p.coordinates[1]*-1}){p.direction}")
     print("HEALTH: " + heart * p.health + "X " * (p.max_health - p.health))
     print(f"BLOCKS: {p.blocks}  GOLD: {p.gold}")
     print(f"HAMMERS: {p.hammers}  PICKAXES: {p.pickaxes}")
