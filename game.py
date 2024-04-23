@@ -68,6 +68,7 @@ class Player:
     self.health = max_health
     self.hammers = hammers
     self.pickaxes = pickaxes
+    self.inventory = ["-","-","-"]
     self.blocks = 0
     self.gold = 0
 
@@ -79,9 +80,7 @@ def display(board, boardrange, players):
   for player in players:
     if boardrange[0][0] <= player.coordinates[0] <= boardrange[1][
         0] and boardrange[0][1] <= player.coordinates[1] <= boardrange[1][1]:
-      board[player.coordinates[0] -
-            boardrange[0][0]][player.coordinates[1] -
-                              boardrange[0][1]] = player.icon
+      board[player.coordinates[0] - boardrange[0][0]][player.coordinates[1] - boardrange[0][1]] = player.icon
   for row in board:
     print("|" + Back.LIGHTGREEN_EX + "".join(row) + Back.RESET + "|")
 
@@ -97,7 +96,7 @@ def death(p, w):
   print(f"BLOCKS: {p.blocks}  GOLD: {p.gold}")
   print(f"HAMMERS: {p.hammers}  PICKAXES: {p.pickaxes}")
   print("-" * 32)
-  display(board, center_to_range(p.coordinates, w.radius), [p])
+  display(w.board, center_to_range(p.coordinates, w.radius), [p])
   print("-" * 32)
   print("you died (x_x)")
   input("press enter to respawn")
@@ -115,10 +114,24 @@ def game():
   p = Player('ツ', coordinates=[0, 0])
   w=World([grass,wall,spike,chest,merchant,mineshaft],[20,5,1,0.1,0.01,0.01],7)
 
-  input("press enter to start")
+  while True:
+    clear()
+    print("welcome to the game!")
+    print("press 1 to play")
+    print("press 2 to view controls")
+    choice = input("")
+    if choice == "1":
+      break
+    elif choice == "2":
+      clear()
+      print("controls:")
+      print("WASD to move")
+      print("E to place")
+      print("Q to mine")
+      print("")
+      input("press enter to go back")
   
   while True:  #game loop
-    time.sleep(0.2)
     clear()
     board = w.get_visible_window(p.coordinates[0], p.coordinates[1])
 
@@ -131,11 +144,10 @@ def game():
     display(board, center_to_range(p.coordinates, w.radius), [p])
     print("-" * 32)
 
+    time.sleep(0.2)
+
     with Terminal().cbreak():  #input detection and player movement
-      print("controls:")
-      print("wasd to move")
-      print("q to break blocks")
-      print("e to place")
+
       print("")
       move = Terminal().inkey(timeout=60)
       candidate_move = p.coordinates.copy()
