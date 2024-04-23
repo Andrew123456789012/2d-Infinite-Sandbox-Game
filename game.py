@@ -28,9 +28,8 @@ class World:
 
   def __init__(self, choices, weights, radius, ground, mine_block):
     self.board = {
-        (0, 0): ground,
-        (-5, random.choice([5, -5])): merchant,
-        (5, random.choice([5, -5])): mine_block,
+        (0, 0): mine_block,
+        (random.choice([5, -5]), random.choice([5, -5])): merchant,
     }
     self.radius = radius
     self.choices = choices
@@ -222,12 +221,16 @@ def game():
       #move validation
       if w.get_board_value(candidate_move) == mineshaft:
         w = u
+        candidate_move[0] = round(candidate_move[0] * 0.5)
+        candidate_move[1] = round(candidate_move[1] * 0.5)
         candidate_move[2] = 0
         w.set_board_value(candidate_move, exit)
         w.set_board_value([candidate_move[0], candidate_move[1] - 1], stone_floor)
 
       elif w.get_board_value(candidate_move) == exit:
         w = g
+        candidate_move[0] = candidate_move[0] * 2
+        candidate_move[1] = candidate_move[1] * 2
         candidate_move[2] = 1
         w.set_board_value(candidate_move, mineshaft)
       
