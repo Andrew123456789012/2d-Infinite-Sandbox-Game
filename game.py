@@ -21,6 +21,7 @@ merchant = f"{Fore.YELLOW}ㅠ{Fore.WHITE}"
 mineshaft = f"{Fore.YELLOW}⊓ {Fore.WHITE}"
 exit = f"{Fore.YELLOW}⊔ {Fore.WHITE}"
 ore = f"{Fore.YELLOW}◈ {Fore.WHITE}"
+home = f"{Fore.MAGENTA}♜ {Fore.WHITE}"
 
 loot = ["block", "gold"]
 loot_weights = [1, 5]
@@ -75,6 +76,8 @@ class Player:
     self.inventory = ["-", "-", "-"]
     self.blocks = 0
     self.gold = 0
+    self.home_coords = "NA"
+    self.special = "NA"
 
 
 def display(board, boardrange, players, layer):
@@ -106,9 +109,9 @@ def death(p, w, board):
   print("HEALTH: " + heart * p.health + "X " * (p.max_health - p.health))
   print(f"BLOCKS: {p.blocks}  GOLD: {p.gold}")
   print(f"HAMMERS: {p.hammers}  PICKAXES: {p.pickaxes}")
-  print("-" * 32)
+  print("-" * (4 * w.radius + 4))
   display(board, center_to_range(p.coordinates, w.radius), [p], p.coordinates[2])
-  print("-" * 32)
+  print("-" * (4 * w.radius + 4))
   print("you died (x_x)")
   input("press enter to respawn")
   p.health = p.max_health
@@ -116,8 +119,9 @@ def death(p, w, board):
   p.gold = 0
   p.coordinates = [0, 0, 1]
   p.direction = "N"
-  p.pickaxes = round(p.pickaxes * 0.5)
-  p.hammers = round(p.hammers * 0.5)
+  p.pickaxes = round(p.pickaxes * 0.5) + 1
+  p.hammers = round(p.hammers * 0.5) + 1
+  
 
 
 def game():
@@ -127,10 +131,10 @@ def game():
   g = World([grass, wall, spike, chest, merchant],
             [20, 5, 1, 0.1, 0.01], 7, grass, mineshaft)
   w = g
-  
+
   while True:  #main menu
     clear()
-    
+
     print("welcome to the game!")
     print("press 1 to play")
     print("press 2 to view controls")
@@ -149,12 +153,12 @@ def game():
       print("blocks  gold")
       print("hammers pickaxes")
       print("")
-      input("press enter to go back")
+      input("press enter to go back ⏎")
 
   while True:  #game loop      
-    
+
     clear()
-    
+
     board = w.get_visible_window(p.coordinates[0], p.coordinates[1])
 
     #prints out the full display
@@ -196,7 +200,14 @@ def game():
           candidate_move[0] -= 1
         elif p.direction == "E":
           candidate_move[0] += 1
-        if w.get_board_value(candidate_move) == grass and p.blocks > 0:
+
+        if p.special == "house" and p.coordinates[2] == 1:
+          p.home_coords = candidate_move
+          w.set_board_value(candidate_move, home)
+          p.special = "NA"
+
+        
+        elif w.get_board_value(candidate_move) == grass and p.blocks > 0:
           w.set_board_value(candidate_move, placed_wall)
           p.blocks -= 1
         candidate_move = p.coordinates
@@ -230,63 +241,76 @@ def game():
 
         candidate_move = p.coordinates
 
+      elif move == "h" and p.home_coords != "NA": #teleporting home
+        candidate_move = p.home_coords
+
       #move validation
-      if w.get_board_value(candidate_move) == mineshaft:
-        w = u
-        candidate_move[0] = round(candidate_move[0] * 0.5)
-        candidate_move[1] = round(candidate_move[1] * 0.5)
-        candidate_move[2] = 0
-
-      elif w.get_board_value(candidate_move) == exit:
-        w = g
-        candidate_move[0] = candidate_move[0] * 2
-        candidate_move[1] = candidate_move[1] * 2
-        candidate_move[2] = 1
-        w.set_board_value(candidate_move, mineshaft)
-      
-      elif w.get_board_value(candidate_move) == broken_wall:
-        w.set_board_value(candidate_move, w.ground)
-
-      elif w.get_board_value(candidate_move) == wall:
-        candidate_move = p.coordinates
-        print("are you trying to break your skull?")
-
-      elif w.get_board_value(candidate_move) == ore:
-        candidate_move = p.coordinates
-        w.set_board_value(candidate_move, w.ground)
-
-      elif w.get_board_value(candidate_move) == placed_wall:
-        candidate_move = p.coordinates
-
-      elif w.get_board_value(candidate_move) == flat_spike:
-        w.set_board_value(candidate_move, w.ground)
-
-      elif w.get_board_value(candidate_move) == spike:
-        if p.hammers > 0:
-          p.hammers -= 1
-          w.set_board_value(candidate_move, flat_spike)
+      if move == "w" or move == "a" or move == "s" or move == "d":
+        if w.get_board_value(candidate_move) == mineshaft:
+          w = u
+          candidate_move[0] = round(candidate_move[0] * 0.5)
+          candidate_move[1] = round(candidate_move[1] * 0.5)
+          candidate_move[2] = 0
+          w.set_board_value([candidate_move[0], candidate_move[1] - 1], w.ground)
+          w.set_board_value([candidate_move[0], candidate_move[1] + 1], w.ground)
+          w.set_board_value([candidate_move[0] - 1, candidate_move[1]], w.ground)
+          w.set_board_value([candidate_move[0] + 1, candidate_move[1]], w.ground)
+  
+        elif w.get_board_value(candidate_move) == exit:
+          w.set_board_value([candidate_move[0], candidate_move[1] - 1], w.ground)
+          w.set_board_value([candidate_move[0], candidate_move[1] + 1], w.ground)
+          w.set_board_value([candidate_move[0] - 1, candidate_move[1]], w.ground)
+          w.set_board_value([candidate_move[0] + 1, candidate_move[1]], w.ground)
+          w = g
+          candidate_move[0] = candidate_move[0] * 2
+          candidate_move[1] = candidate_move[1] * 2
+          candidate_move[2] = 1
+          w.set_board_value(candidate_move, mineshaft)
+  
+        elif w.get_board_value(candidate_move) == broken_wall:
+          w.set_board_value(candidate_move, w.ground)
+  
+        elif w.get_board_value(candidate_move) == wall:
           candidate_move = p.coordinates
-        else:
-          p.health -= 1
-
-      elif w.get_board_value(candidate_move) == chest:
-        chest_loot = random.choices(loot, weights=loot_weights, k=1)
-        if chest_loot == ["hammer"]:
-          p.hammers += random.randint(1, 3)
-        elif chest_loot == ["pickaxe"]:
-          p.pickaxes += random.randint(1, 3)
-        elif chest_loot == ["block"]:
-          p.blocks += random.randint(1, 3)
-        elif chest_loot == ["gold"]:
-          p.gold += random.randint(1, 5)
-
-        w.set_board_value(candidate_move, looted_chest)
-
-      elif w.get_board_value(candidate_move) == merchant:
-        merchant_interaction(p)
-        
-
-      p.coordinates = candidate_move
-
+          print("are you trying to break your skull?")
+  
+        elif w.get_board_value(candidate_move) == ore:
+          candidate_move = p.coordinates
+          w.set_board_value(candidate_move, w.ground)
+  
+        elif w.get_board_value(candidate_move) == placed_wall:
+          candidate_move = p.coordinates
+  
+        elif w.get_board_value(candidate_move) == flat_spike:
+          w.set_board_value(candidate_move, w.ground)
+  
+        elif w.get_board_value(candidate_move) == spike:
+          if p.hammers > 0:
+            p.hammers -= 1
+            w.set_board_value(candidate_move, flat_spike)
+            candidate_move = p.coordinates
+          else:
+            p.health -= 1
+  
+        elif w.get_board_value(candidate_move) == chest:
+          chest_loot = random.choices(loot, weights=loot_weights, k=1)
+          if chest_loot == ["hammer"]:
+            p.hammers += random.randint(1, 3)
+          elif chest_loot == ["pickaxe"]:
+            p.pickaxes += random.randint(1, 3)
+          elif chest_loot == ["block"]:
+            p.blocks += random.randint(1, 3)
+          elif chest_loot == ["gold"]:
+            p.gold += random.randint(1, 5)
+  
+          w.set_board_value(candidate_move, looted_chest)
+  
+        elif w.get_board_value(candidate_move) == merchant:
+          merchant_interaction(p)
+  
+  
+        p.coordinates = candidate_move
+  
     if p.health == 0:
       death(p, w, board)
+      w = g
