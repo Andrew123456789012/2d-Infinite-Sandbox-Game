@@ -5,6 +5,8 @@ from replit import clear
 from blessed import Terminal
 import time
 
+
+
 grass = f"{Fore.LIGHTGREEN_EX}~ {Fore.WHITE}"
 stone_floor = f"{Fore.LIGHTBLACK_EX}~ {Fore.WHITE}"
 wall = f"{Fore.BLACK}x {Fore.WHITE}"
@@ -20,8 +22,8 @@ mineshaft = f"{Fore.YELLOW}⊓ {Fore.WHITE}"
 exit = f"{Fore.YELLOW}⊔ {Fore.WHITE}"
 ore = f"{Fore.YELLOW}◈ {Fore.WHITE}"
 
-loot = ["hammer", "pickaxe", "block", "gold"]
-loot_weights = [1, 1, 1, 5]
+loot = ["block", "gold"]
+loot_weights = [1, 5]
 
 
 class World:
@@ -98,23 +100,30 @@ def center_to_range(center, radius):
                                                      center[1] + radius))
 
 
-def death(p, w):
+def death(p, w, board):
   clear()
   print(f"({p.coordinates[0]}, {p.coordinates[1] * -1})")
   print("HEALTH: " + heart * p.health + "X " * (p.max_health - p.health))
   print(f"BLOCKS: {p.blocks}  GOLD: {p.gold}")
   print(f"HAMMERS: {p.hammers}  PICKAXES: {p.pickaxes}")
   print("-" * 32)
-  display(w.board, center_to_range(p.coordinates, w.radius), [p], p.coordinates[2])
+  display(board, center_to_range(p.coordinates, w.radius), [p], p.coordinates[2])
   print("-" * 32)
   print("you died (x_x)")
   input("press enter to respawn")
+  p.health = p.max_health
+  p.blocks = 0
+  p.gold = 0
+  p.coordinates = (0, 0, 1)
+  p.direction = "N"
+  p.pickaxes = round(p.pickaxes * 0.5)
+  p.hammers = round(p.hammers * 0.5)
 
 
 def game():
   p = Player('ツ', coordinates=[0, 0, 1])
   u = World([stone_floor, wall, spike, ore, chest, merchant, exit],
-            [2, 2, 2, 0.1, 0.01, 0.005, 0.001], 5, stone_floor, exit)
+            [2, 2, 2, 0.5, 0.01, 0.005, 0.005], 5, stone_floor, exit)
   g = World([grass, wall, spike, chest, merchant],
             [20, 5, 1, 0.1, 0.01], 7, grass, mineshaft)
   w = g
@@ -211,10 +220,13 @@ def game():
           p.blocks += random.randint(1, 5)
           w.set_board_value(candidate_move, broken_wall)
 
-        if w.get_board_value(candidate_move) == ore and p. pickaxes > 0:
+        if w.get_board_value(candidate_move) == ore:
+          if p.pickaxes > 0:
+            p.pickaxes -= 1
+            p.gold += random.randint(1, 10)
+          else:
+            p.gold += 1
           w.set_board_value(candidate_move, w.ground)
-          p.pickaxes -= 1
-          p.gold += random.randint(1, 5)
 
         candidate_move = p.coordinates
 
@@ -277,4 +289,4 @@ def game():
       p.coordinates = candidate_move
 
     if p.health == 0:
-      death(p, w)
+      death(p, w, board)
