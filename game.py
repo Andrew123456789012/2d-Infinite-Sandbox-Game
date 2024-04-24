@@ -82,7 +82,7 @@ def display(board, boardrange, players, layer):
   for player in players:
     if boardrange[0][0] <= player.coordinates[0] <= boardrange[1][
         0] and boardrange[0][1] <= player.coordinates[1] <= boardrange[1][1]:
-      board[player.coordinates[0] -
+      board[player.coordinates[0] - 
             boardrange[0][0]][player.coordinates[1] -
                               boardrange[0][1]] = player.icon
   if layer == 0:
@@ -115,8 +115,8 @@ def game():
   p = Player('ツ', coordinates=[0, 0, 1])
   u = World([stone_floor, wall, spike, ore, chest, merchant, exit],
             [2, 2, 2, 0.1, 0.01, 0.005, 0.001], 5, stone_floor, exit)
-  g = World([grass, wall, spike, chest, merchant, mineshaft],
-            [20, 5, 1, 0.1, 0.01, 0.01], 7, grass, mineshaft)
+  g = World([grass, wall, spike, chest, merchant],
+            [20, 5, 1, 0.1, 0.01], 7, grass, mineshaft)
   w = g
   
   while True:  #main menu
@@ -224,8 +224,6 @@ def game():
         candidate_move[0] = round(candidate_move[0] * 0.5)
         candidate_move[1] = round(candidate_move[1] * 0.5)
         candidate_move[2] = 0
-        w.set_board_value(candidate_move, exit)
-        w.set_board_value([candidate_move[0], candidate_move[1] - 1], stone_floor)
 
       elif w.get_board_value(candidate_move) == exit:
         w = g
