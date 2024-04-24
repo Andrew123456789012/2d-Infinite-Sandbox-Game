@@ -114,7 +114,7 @@ def death(p, w, board):
   p.health = p.max_health
   p.blocks = 0
   p.gold = 0
-  p.coordinates = (0, 0, 1)
+  p.coordinates = [0, 0, 1]
   p.direction = "N"
   p.pickaxes = round(p.pickaxes * 0.5)
   p.hammers = round(p.hammers * 0.5)
