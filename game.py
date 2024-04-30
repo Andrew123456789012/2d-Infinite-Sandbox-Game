@@ -1,11 +1,11 @@
 import random
-from colorama import Fore, Back
-from merchants import merchant_interaction
-from replit import clear
-from blessed import Terminal
 import time
 
+from blessed import Terminal
+from colorama import Back, Fore
+from replit import clear
 
+from merchants import merchant_interaction
 
 grass = f"{Fore.LIGHTGREEN_EX}~ {Fore.WHITE}"
 stone_floor = f"{Fore.LIGHTBLACK_EX}~ {Fore.WHITE}"
@@ -25,6 +25,42 @@ home = f"{Fore.MAGENTA}♜ {Fore.WHITE}"
 
 loot = ["block", "gold"]
 loot_weights = [1, 5]
+
+class Item:
+  def __init__(self, name, number):
+    self.name = name
+    self.number = number
+
+class Inventory:
+  def __init__(self, capacity):
+    self._bag = [Item(None, 0)] * capacity
+    self._available = list(range(0, capacity))
+    self._lookup = dict()
+
+
+  def add_item(self, item):
+    if item.name in self._lookup:
+      self._bag[self._lookup[item.name]].number += item.number
+    elif self._available:
+      index = self._available.pop(0)
+      self._bag[index] = item
+      self._lookup[item.name] = index
+    else:
+      return False
+    return True
+
+  def remove_item(self, index):
+    if self._bag[index].name is None:
+      return None
+    item = self._bag[index]
+    if item.number > 0:
+      self._bag[index].number -= 1
+    if item.number == 0:
+      self._bag[index] = Item(None, 0)
+      self._available.append(index)
+      self._available.sort()
+      self._lookup.pop(item.name)
+    return item.name
 
 
 class World:
@@ -73,11 +109,8 @@ class Player:
     self.health = max_health
     self.hammers = hammers
     self.pickaxes = pickaxes
-    self.inventory = ["-", "-", "-"]
-    self.blocks = 0
     self.gold = 0
     self.home_coords = "NA"
-    self.special = "NA"
 
 
 def display(board, boardrange, players, layer):
@@ -115,7 +148,6 @@ def death(p, w, board):
   print("you died (x_x)")
   input("press enter to respawn")
   p.health = p.max_health
-  p.blocks = 0
   p.gold = 0
   p.coordinates = [0, 0, 1]
   p.direction = "N"
@@ -125,6 +157,7 @@ def death(p, w, board):
 
 
 def game():
+  i = Inventory(5)
   p = Player('ツ', coordinates=[0, 0, 1])
   u = World([stone_floor, wall, spike, ore, chest, merchant, exit],
             [2, 2, 2, 0.5, 0.01, 0.005, 0.005], 5, stone_floor, exit)
@@ -163,12 +196,14 @@ def game():
 
     #prints out the full display
     print(f"({p.coordinates[0]},{p.coordinates[1]*-1}){p.direction}")
+    print(f"GOLD: {p.gold}")
     print("HEALTH: " + heart * p.health + "X " * (p.max_health - p.health))
-    print(f"BLOCKS: {p.blocks}  GOLD: {p.gold}")
     print(f"HAMMERS: {p.hammers}  PICKAXES: {p.pickaxes}")
     print("-" * (4 * w.radius + 4))
     display(board, center_to_range(p.coordinates, w.radius), [p], p.coordinates[2])
     print("-" * (4 * w.radius + 4))
+    print(f"{i._bag[0].name} {i._bag[1].name} {i._bag[2].name} {i._bag[3].name} {i._bag[4].name}")
+    print(f"{i._bag[0].number} {i._bag[1].number} {i._bag[2].number} {i._bag[3].number} {i._bag[4].number}")
 
     time.sleep(0.2)
 
@@ -191,7 +226,8 @@ def game():
         p.direction = "E"
         candidate_move[0] += 1
 
-      elif move == "e":  #placing
+      elif move == "1" or move == "2" or move == "3" or move == "4" or move == "5":
+        
         if p.direction == "N":
           candidate_move[1] -= 1
         elif p.direction == "S":
@@ -201,17 +237,19 @@ def game():
         elif p.direction == "E":
           candidate_move[0] += 1
 
-        if p.special == "house" and p.coordinates[2] == 1:
-          p.home_coords = candidate_move
-          w.set_board_value(candidate_move, home)
-          p.special = "NA"
+        if i._bag[int(move) - 1] is not None:
+          
+          if i._bag[int(move) - 1].name == "X-BLOCK":
+            w.set_board_value(candidate_move, placed_wall)
 
+          if i._bag[int(move) - 1] == home:
+            p.home_coords = p.coordinates
+            w.set_board_value(candidate_move, home)
+
+          i.remove_item(int(move) - 1)
+          
         
-        elif w.get_board_value(candidate_move) == grass and p.blocks > 0:
-          w.set_board_value(candidate_move, placed_wall)
-          p.blocks -= 1
-        candidate_move = p.coordinates
-
+      
       elif move == "q":  #breaking
         if p.direction == "N":
           candidate_move[1] -= 1
@@ -224,11 +262,11 @@ def game():
 
         if w.get_board_value(candidate_move) == placed_wall:
           w.set_board_value(candidate_move, w.ground)
-          p.blocks += 1
+          i.add_item(Item("X-BLOCK", 1))
 
         if w.get_board_value(candidate_move) == wall and p.pickaxes > 0:
           p.pickaxes -= 1
-          p.blocks += random.randint(1, 5)
+          i.add_item(Item("X-BLOCK", random.randint(1, 5)))
           w.set_board_value(candidate_move, broken_wall)
 
         if w.get_board_value(candidate_move) == ore:
@@ -299,14 +337,14 @@ def game():
           elif chest_loot == ["pickaxe"]:
             p.pickaxes += random.randint(1, 3)
           elif chest_loot == ["block"]:
-            p.blocks += random.randint(1, 3)
+            i.add_item(Item("X-BLOCK", random.randint(1, 3)))
           elif chest_loot == ["gold"]:
             p.gold += random.randint(1, 5)
   
           w.set_board_value(candidate_move, looted_chest)
   
         elif w.get_board_value(candidate_move) == merchant:
-          merchant_interaction(p)
+          merchant_interaction(p, i)
   
   
         p.coordinates = candidate_move
@@ -314,3 +352,4 @@ def game():
     if p.health == 0:
       death(p, w, board)
       w = g
+      i._bag = [Item(None, 0)] * capacity
