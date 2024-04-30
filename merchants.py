@@ -1,8 +1,12 @@
 from replit import clear
 from colorama import Fore
 
+class Item:
+  def __init__(self, name, number):
+    self.name = name
+    self.number = number
 
-def merchant_interaction(player):
+def merchant_interaction(player, inv):
   while True:
     clear()
     print(f"{Fore.BLUE}you have encountered a merchant table!")
@@ -26,7 +30,7 @@ def merchant_interaction(player):
       player.gold -= 3
       print("you bought a pickaxe!")
     elif choice == "3" and player.gold > 0:
-      player.blocks += 1
+      inv.add_item(Item("block", 1))
       player.gold -= 1
       print("you bought a block!")
     elif choice == "4" and player.gold > 9 and player.health < 3:
@@ -40,9 +44,8 @@ def merchant_interaction(player):
       print("you bought a heart slot!")
     elif choice == "6" and player.gold > 49:
       player.gold -= 50
-      player.special = "house"
+      inv.add_item(Item(f"{Fore.MAGENTA}♜ {Fore.WHITE}", 1))
       print("you bought a house!")
-      print("next time you press e it you will place it")
     elif choice == "7":
       print("you exit the merchant.")
       break
@@ -50,3 +53,4 @@ def merchant_interaction(player):
       print("invalid choice or not enough gold.")
     input("press enter to continue.")
   print(Fore.WHITE)
+
