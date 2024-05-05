@@ -6,7 +6,8 @@ class Item:
     self.name = name
     self.number = number
 
-def merchant_interaction(player, inv):
+
+def purchase(player, inv):
   while True:
     clear()
     print(f"{Fore.BLUE}you have encountered a merchant table!")
@@ -18,7 +19,8 @@ def merchant_interaction(player, inv):
     print("4. heart (10 gold)       ♡")
     print("5. heart slot (20 gold)  ♡")
     print("6. house (50 gold)       ♜")
-    print("7. exit                  ⏎")
+    print("7. shovel (3 gold)      --⊃")
+    print("8. exit                  ⏎")
     choice = input("enter your choice: ")
 
     if choice == "1" and player.gold > 1:
@@ -30,7 +32,7 @@ def merchant_interaction(player, inv):
       player.gold -= 3
       print("you bought a pickaxe!")
     elif choice == "3" and player.gold > 0:
-      inv.add_item(Item("block", 1))
+      inv.add_item(Item("X-BLOCK", 1))
       player.gold -= 1
       print("you bought a block!")
     elif choice == "4" and player.gold > 9 and player.health < 3:
@@ -44,13 +46,20 @@ def merchant_interaction(player, inv):
       print("you bought a heart slot!")
     elif choice == "6" and player.gold > 49:
       player.gold -= 50
-      inv.add_item(Item(f"{Fore.MAGENTA}♜ {Fore.WHITE}", 1))
+      inv.add_item(Item("HOUSE", 1))
       print("you bought a house!")
-    elif choice == "7":
+    elif choice == "7" and player.gold > 2:
+      player.shovels += 1
+      player.gold -= 3
+      print("you bought a shovel!")
+    elif choice == "8":
       print("you exit the merchant.")
       break
     else:
       print("invalid choice or not enough gold.")
     input("press enter to continue.")
   print(Fore.WHITE)
+
+def merchant(player, inv):
+  purchase(player, inv)
 
