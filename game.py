@@ -29,7 +29,7 @@ mineshaft = f"{Fore.YELLOW}⊓ {Fore.WHITE}"
 exit = f"{Fore.YELLOW}⊔ {Fore.WHITE}"
 ore = f"{Fore.YELLOW}◈ {Fore.WHITE}"
 home = f"{Fore.MAGENTA}♜ {Fore.WHITE}"
-empty = "  "
+empty = f"{Fore.BLACK}╱╲{Fore.WHITE}"
 
 loot = ["block", "gold", "hammer", "pickaxe", "heart"]
 loot_weights = [1, 5, 1, 1, 0.5]
@@ -116,6 +116,7 @@ class Player:
   def __init__(self, icon, coordinates, max_health=3, hammers=1, pickaxes=1, shovels=1):
     self.icon = icon
     self.coordinates = coordinates
+    self.candidate_move = [0,0,0]
     self.direction = "N"
     self.max_health = max_health
     self.health = max_health
@@ -125,6 +126,8 @@ class Player:
     self.gold = 0
     self.home_coords = "NA"
     self.house = None
+    self.structures = dict()
+    self.struct_coords = None
 
 
 def display(board, boardrange, players, layer):
@@ -168,7 +171,7 @@ def death(p, w, board):
   p.direction = "N"
   p.pickaxes = round(p.pickaxes * 0.5) + 1
   p.hammers = round(p.hammers * 0.5) + 1
-  
+
 
 
 def game():
@@ -229,79 +232,78 @@ def game():
 
       print("")
       move = Terminal().inkey(timeout=60)
-      candidate_move = p.coordinates.copy()
+      p.candidate_move = p.coordinates.copy()
 
       if move == "w":
-        i.add_item(Item("HOUSE", 1))
         p.direction = "N"
-        candidate_move[1] -= 1
+        p.candidate_move[1] -= 1
       elif move == "s":
         p.direction = "S"
-        candidate_move[1] += 1
+        p.candidate_move[1] += 1
       elif move == "a":
         p.direction = "W"
-        candidate_move[0] -= 1
+        p.candidate_move[0] -= 1
       elif move == "d":
         p.direction = "E"
-        candidate_move[0] += 1
+        p.candidate_move[0] += 1
 
       elif move == "1" or move == "2" or move == "3" or move == "4" or move == "5":
-        
-        if p.direction == "N":
-          candidate_move[1] -= 1
-        elif p.direction == "S":
-          candidate_move[1] += 1
-        elif p.direction == "W":
-          candidate_move[0] -= 1
-        elif p.direction == "E":
-          candidate_move[0] += 1
 
-        if w.get_board_value(candidate_move) == w.ground or w.get_board_value(candidate_move) == empty:
-  
+        if p.direction == "N":
+          p.candidate_move[1] -= 1
+        elif p.direction == "S":
+          p.candidate_move[1] += 1
+        elif p.direction == "W":
+          p.candidate_move[0] -= 1
+        elif p.direction == "E":
+          p.candidate_move[0] += 1
+
+        if w.get_board_value(p.candidate_move) == w.ground or w.get_board_value(p.candidate_move) == empty:
+
 
           if i._bag[int(move) - 1].name == "X-BLOCK":
-            w.set_board_value(candidate_move, placed_x)
+            w.set_board_value(p.candidate_move, placed_x)
 
           if i._bag[int(move) - 1].name == "HOUSE":
-            p.home_coords = candidate_move
-            w.set_board_value(candidate_move, home)
+            p.home_coords = p.candidate_move
+            w.set_board_value(p.candidate_move, home)
             p.house = World([house_floor], [1], 6, house_floor, house_floor, 5)
             p.house.set_board_value([6,0], door)
 
           if i._bag[int(move) - 1].name == "ROCK":
-            w.set_board_value(candidate_move, placed_rock)
+            w.set_board_value(p.candidate_move, placed_rock)
 
           i.remove_item(int(move) - 1)
 
 
       elif move == "e":
-        if w.get_board_value(candidate_move) == shop:
+        if w.get_board_value(p.candidate_move) == shop:
           merchant(p, i)
-          
-        elif w.get_board_value(candidate_move) == mineshaft:
+
+        elif w.get_board_value(p.candidate_move) == mineshaft:
           w = u
-          candidate_move[0] = round(candidate_move[0] * 0.5)
-          candidate_move[1] = round(candidate_move[1] * 0.5)
-          candidate_move[2] = 0
+          p.candidate_move[0] = round(p.candidate_move[0] * 0.5)
+          p.candidate_move[1] = round(p.candidate_move[1] * 0.5)
+          p.candidate_move[2] = 0
           p.coordinates[2] = 0
-          w.set_board_value([candidate_move[0], candidate_move[1] - 1], w.ground)
-          w.set_board_value([candidate_move[0], candidate_move[1] + 1], w.ground)
-          w.set_board_value([candidate_move[0] - 1, candidate_move[1]], w.ground)
-          w.set_board_value([candidate_move[0] + 1, candidate_move[1]], w.ground)
+          w.set_board_value([p.candidate_move[0], p.candidate_move[1] - 1], w.ground)
+          w.set_board_value([p.candidate_move[0], p.candidate_move[1] + 1], w.ground)
+          w.set_board_value([p.candidate_move[0] - 1, p.candidate_move[1]], w.ground)
+          w.set_board_value([p.candidate_move[0] + 1, p.candidate_move[1]], w.ground)
 
-        elif w.get_board_value(candidate_move) == exit:
+        elif w.get_board_value(p.candidate_move) == exit:
           w = g
-          w.set_board_value([candidate_move[0], candidate_move[1] - 1], w.ground)
-          w.set_board_value([candidate_move[0], candidate_move[1] + 1], w.ground)
-          w.set_board_value([candidate_move[0] - 1, candidate_move[1]], w.ground)
-          w.set_board_value([candidate_move[0] + 1, candidate_move[1]], w.ground)
-          candidate_move[0] = candidate_move[0] * 2
-          candidate_move[1] = candidate_move[1] * 2
-          candidate_move[2] = 1
+          w.set_board_value([p.candidate_move[0], p.candidate_move[1] - 1], w.ground)
+          w.set_board_value([p.candidate_move[0], p.candidate_move[1] + 1], w.ground)
+          w.set_board_value([p.candidate_move[0] - 1, p.candidate_move[1]], w.ground)
+          w.set_board_value([p.candidate_move[0] + 1, p.candidate_move[1]], w.ground)
+          p.candidate_move[0] = p.candidate_move[0] * 2
+          p.candidate_move[1] = p.candidate_move[1] * 2
+          p.candidate_move[2] = 1
           p.coordinates[2] = 1
-          w.set_board_value(candidate_move, mineshaft)
+          w.set_board_value(p.candidate_move, mineshaft)
 
-        elif w.get_board_value(candidate_move) == chest:
+        elif w.get_board_value(p.candidate_move) == chest:
           chest_loot = random.choices(loot, weights=loot_weights, k=1)
           if chest_loot == ["hammer"]:
             p.hammers += random.randint(1, 3)
@@ -311,95 +313,107 @@ def game():
             i.add_item(Item("X-BLOCK", random.randint(1, 3)))
           elif chest_loot == ["gold"]:
             p.gold += random.randint(1, 5)
-          w.set_board_value(candidate_move, looted_chest)
+          w.set_board_value(p.candidate_move, looted_chest)
 
-        elif w.get_board_value(candidate_move) == grave and p.shovels > 0:
+        elif w.get_board_value(p.candidate_move) == grave and p.shovels > 0:
           p.shovels -= 1
-          w.set_board_value(candidate_move, broken_block)
+          w.set_board_value(p.candidate_move, broken_block)
           if random.randint(1,100) > 80:
             i.add_item(Item("ARTIFACT", 1))
           p.gold += random.randint(1,10)
 
-        elif candidate_move == p.home_coords:
+        elif p.candidate_move == p.home_coords:
           w = p.house
-          candidate_move = [6,0,1]
+          p.candidate_move = [6,0,1]
           p.coordinates = [6,0,1]
+          p.struct_coords = p.home_coords
 
-        elif w.get_board_value(candidate_move) == door:
+        elif w.get_board_value(p.candidate_move) == door:
           w = g
-          candidate_move = p.home_coords
-          p.coordinates = p.home_coords
-      
-      
+          p.candidate_move = p.struct_coords
+          p.coordinates = p.struct_coords
+
+        elif w.get_board_value(p.candidate_move) == pyramid:
+          if tuple(p.candidate_move) in p.structures:
+            w = p.structures[tuple(p.candidate_move)]
+          else:
+            p.structures[tuple(p.candidate_move)] = World([stone_floor, chest, x_block, placed_x, spike], [1, 0.5, 0.4, 0.1, 0.25], 6, stone_floor, stone_floor, 5)
+            p.structures[tuple(p.candidate_move)].set_board_value([0,6], door)
+            p.structures[tuple(p.candidate_move)].set_board_value([0,5], stone_floor)
+          p.struct_coords = p.coordinates
+          w = p.structures[tuple(p.candidate_move)]
+          p.coordinates = [0,6,1]
+
+
       elif move == "q":  #breaking
         if p.direction == "N":
-          candidate_move[1] -= 1
+          p.candidate_move[1] -= 1
         elif p.direction == "S":
-          candidate_move[1] += 1
+          p.candidate_move[1] += 1
         elif p.direction == "W":
-          candidate_move[0] -= 1
+          p.candidate_move[0] -= 1
         elif p.direction == "E":
-          candidate_move[0] += 1
+          p.candidate_move[0] += 1
 
-        if w.get_board_value(candidate_move) == placed_x:
-          w.set_board_value(candidate_move, w.ground)
+        if w.get_board_value(p.candidate_move) == placed_x:
+          w.set_board_value(p.candidate_move, w.ground)
           i.add_item(Item("X-BLOCK", 1))
 
-        if w.get_board_value(candidate_move) == x_block and p.pickaxes > 0:
+        if w.get_board_value(p.candidate_move) == x_block and p.pickaxes > 0:
           p.pickaxes -= 1
           i.add_item(Item("X-BLOCK", random.randint(1, 5)))
-          w.set_board_value(candidate_move, broken_block)
-        
-        if w.get_board_value(candidate_move) == ore:
+          w.set_board_value(p.candidate_move, broken_block)
+
+        if w.get_board_value(p.candidate_move) == ore:
           if p.pickaxes > 0:
             p.pickaxes -= 1
             p.gold += random.randint(1, 10)
           else:
             p.gold += 1
-          w.set_board_value(candidate_move, w.ground)
-          
-        if w.get_board_value(candidate_move) == placed_rock:
+          w.set_board_value(p.candidate_move, w.ground)
+
+        if w.get_board_value(p.candidate_move) == placed_rock:
           i.add_item(Item("ROCK", 1))
-          w.set_board_value(candidate_move, broken_block)
-        
-        if w.get_board_value(candidate_move) == rock and p.pickaxes > 0:
+          w.set_board_value(p.candidate_move, broken_block)
+
+        if w.get_board_value(p.candidate_move) == rock and p.pickaxes > 0:
           p.pickaxes -= 1
           i.add_item(Item("ROCK", random.randint(1, 5)))
-          w.set_board_value(candidate_move, broken_block)
+          w.set_board_value(p.candidate_move, broken_block)
 
-        candidate_move = p.coordinates
+        p.candidate_move = p.coordinates
 
       #move validation
       if move == "w" or move == "a" or move == "s" or move == "d":
-  
-        if w.get_board_value(candidate_move) == broken_block:
-          w.set_board_value(candidate_move, w.ground)
-  
-        elif w.get_board_value(candidate_move) == x_block:
-          candidate_move = p.coordinates
+
+        if w.get_board_value(p.candidate_move) == broken_block:
+          w.set_board_value(p.candidate_move, w.ground)
+
+        elif w.get_board_value(p.candidate_move) == x_block:
+          p.candidate_move = p.coordinates
           print("are you trying to break your skull?")
-  
-        elif w.get_board_value(candidate_move) == ore:
-          candidate_move = p.coordinates
-          w.set_board_value(candidate_move, w.ground)
-  
-        elif w.get_board_value(candidate_move) == placed_x:
-          candidate_move = p.coordinates
-  
-        elif w.get_board_value(candidate_move) == flat_spike:
-          w.set_board_value(candidate_move, w.ground)
-  
-        elif w.get_board_value(candidate_move) == spike:
+
+        elif w.get_board_value(p.candidate_move) == ore:
+          p.candidate_move = p.coordinates
+          w.set_board_value(p.candidate_move, w.ground)
+
+        elif w.get_board_value(p.candidate_move) == placed_x:
+          p.candidate_move = p.coordinates
+
+        elif w.get_board_value(p.candidate_move) == flat_spike:
+          w.set_board_value(p.candidate_move, w.ground)
+
+        elif w.get_board_value(p.candidate_move) == spike:
           if p.hammers > 0:
             p.hammers -= 1
-            w.set_board_value(candidate_move, flat_spike)
-            candidate_move = p.coordinates
+            w.set_board_value(p.candidate_move, flat_spike)
+            p.candidate_move = p.coordinates
           else:
             p.health -= 1
-  
-  
-        p.coordinates = candidate_move
-  
+
+
+        p.coordinates = p.candidate_move
+
     if p.health == 0:
       death(p, w, board)
       w = g
