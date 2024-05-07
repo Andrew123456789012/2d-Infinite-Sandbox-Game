@@ -2,15 +2,45 @@ from replit import clear
 from colorama import Fore
 
 class Item:
-  def __init__(self, name, number):
+  def __init__(self, name, number, value):
     self.name = name
     self.number = number
+    self.value = value
 
+
+def sale(player, inv):
+  valid = ["1", "2", "3", "4", "5"]
+  while True:
+    clear()
+    print("what would you like to sell")
+    print("name : number : value")
+    print(f"1. {inv._bag[0].name} : {inv._bag[0].number} : {inv._bag[0].value}")
+    print(f"2. {inv._bag[1].name} : {inv._bag[1].number} : {inv._bag[1].value}")
+    print(f"3. {inv._bag[2].name} : {inv._bag[2].number} : {inv._bag[2].value}")
+    print(f"4. {inv._bag[3].name} : {inv._bag[3].number} : {inv._bag[3].value}")
+    print(f"5. {inv._bag[4].name} : {inv._bag[4].number} : {inv._bag[4].value}")
+    print("6. exit")
+    choice = input("enter your choice: ")
+
+    if choice == "6":
+      break
+    if choice in valid:
+      choice = int(choice)
+      if inv._bag[choice - 1].number == 0:
+        print("you don't have any of that")
+      if inv._bag[choice - 1].name is not None:
+        print(f"you sold a {inv._bag[choice - 1].name}")
+        print(f"you got {inv._bag[choice - 1].value} gold")
+        player.gold += inv._bag[choice - 1].value
+        inv.remove_item(choice - 1)
+    else:
+      print("invalid choice")
+      
+    input("press enter to continue")
 
 def purchase(player, inv):
   while True:
     clear()
-    print(f"{Fore.BLUE}you have encountered a merchant table!")
     print(f"you have {player.gold} gold.")
     print("what would you like to buy?")
     print("1. hammer (2 gold)      --█")
@@ -61,5 +91,20 @@ def purchase(player, inv):
   print(Fore.WHITE)
 
 def merchant(player, inv):
-  purchase(player, inv)
+  print(f"{Fore.BLUE}you have encountered a merchant table!")
+  while True:
+    clear()
+    print("what would you like")
+    print("1. buy")
+    print("2. sell")
+    print("3. exit")
+    choice = input("enter your choice: ")
+    if choice == "1":
+      purchase(player, inv)
+    if choice == "2":
+      sale(player, inv)
+    if choice == "3":
+      break
+    else:
+      print("invalid choice")
 
