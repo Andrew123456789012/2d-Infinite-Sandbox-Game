@@ -29,19 +29,20 @@ mineshaft = f"{Fore.YELLOW}⊓ {Fore.WHITE}"
 exit = f"{Fore.YELLOW}⊔ {Fore.WHITE}"
 ore = f"{Fore.YELLOW}◈ {Fore.WHITE}"
 home = f"{Fore.MAGENTA}♜ {Fore.WHITE}"
-empty = f"{Fore.BLACK}╱╲{Fore.WHITE}"
+empty = "  "
 
 loot = ["block", "gold", "hammer", "pickaxe", "heart"]
 loot_weights = [1, 5, 1, 1, 0.5]
 
 class Item:
-  def __init__(self, name, number):
+  def __init__(self, name, number, value):
     self.name = name
     self.number = number
+    self.value = value
 
 class Inventory:
   def __init__(self, capacity):
-    self._bag = [Item(None, 0)] * capacity
+    self._bag = [Item(None, 0, 0)] * capacity
     self._available = list(range(0, capacity))
     self._lookup = dict()
 
@@ -64,7 +65,7 @@ class Inventory:
     if item.number > 0:
       self._bag[index].number -= 1
     if item.number == 0:
-      self._bag[index] = Item(None, 0)
+      self._bag[index] = Item(None, 0, 0)
       self._available.append(index)
       self._available.sort()
       self._lookup.pop(item.name)
@@ -310,7 +311,7 @@ def game():
           elif chest_loot == ["pickaxe"]:
             p.pickaxes += random.randint(1, 3)
           elif chest_loot == ["block"]:
-            i.add_item(Item("X-BLOCK", random.randint(1, 3)))
+            i.add_item(Item("X-BLOCK", random.randint(1, 3), 1))
           elif chest_loot == ["gold"]:
             p.gold += random.randint(1, 5)
           w.set_board_value(p.candidate_move, looted_chest)
@@ -319,7 +320,7 @@ def game():
           p.shovels -= 1
           w.set_board_value(p.candidate_move, broken_block)
           if random.randint(1,100) > 80:
-            i.add_item(Item("ARTIFACT", 1))
+            i.add_item(Item("ARTIFACT", 1, 100))
           p.gold += random.randint(1,10)
 
         elif p.candidate_move == p.home_coords:
@@ -357,11 +358,11 @@ def game():
 
         if w.get_board_value(p.candidate_move) == placed_x:
           w.set_board_value(p.candidate_move, w.ground)
-          i.add_item(Item("X-BLOCK", 1))
+          i.add_item(Item("X-BLOCK", 1, 1))
 
         if w.get_board_value(p.candidate_move) == x_block and p.pickaxes > 0:
           p.pickaxes -= 1
-          i.add_item(Item("X-BLOCK", random.randint(1, 5)))
+          i.add_item(Item("X-BLOCK", random.randint(1, 5), 1))
           w.set_board_value(p.candidate_move, broken_block)
 
         if w.get_board_value(p.candidate_move) == ore:
@@ -373,12 +374,12 @@ def game():
           w.set_board_value(p.candidate_move, w.ground)
 
         if w.get_board_value(p.candidate_move) == placed_rock:
-          i.add_item(Item("ROCK", 1))
+          i.add_item(Item("ROCK", 1, 2))
           w.set_board_value(p.candidate_move, broken_block)
 
         if w.get_board_value(p.candidate_move) == rock and p.pickaxes > 0:
           p.pickaxes -= 1
-          i.add_item(Item("ROCK", random.randint(1, 5)))
+          i.add_item(Item("ROCK", random.randint(1, 5), 2))
           w.set_board_value(p.candidate_move, broken_block)
 
         p.candidate_move = p.coordinates
@@ -417,4 +418,4 @@ def game():
     if p.health == 0:
       death(p, w, board)
       w = g
-      i._bag = [Item(None, 0)] * 5
+      i._bag = [Item(None, 0, 0)] * 5
