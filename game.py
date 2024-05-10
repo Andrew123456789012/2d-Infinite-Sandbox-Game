@@ -1,6 +1,7 @@
 import random
 import time
 
+from menu import menu
 from blessed import Terminal
 from colorama import Back, Fore
 from replit import clear
@@ -9,6 +10,14 @@ from merchants import merchant
 
 grave = f"{Fore.BLACK}☗ {Fore.WHITE}"
 pyramid = f"{Fore.BLACK}╱╲{Fore.WHITE}"
+home = f"{Fore.MAGENTA}⌂ {Fore.WHITE}"
+
+
+chest = f"{Fore.YELLOW}[]{Fore.WHITE}"
+shop = f"{Fore.YELLOW}ㅠ{Fore.WHITE}"
+
+mineshaft = f"{Fore.YELLOW}⊓ {Fore.WHITE}"
+exit = f"{Fore.YELLOW}⊔ {Fore.WHITE}"
 
 door = f"{Fore.BLACK}∎ {Fore.WHITE}"
 grass = f"{Fore.LIGHTGREEN_EX}~ {Fore.WHITE}"
@@ -17,22 +26,29 @@ house_floor = f"{Fore.LIGHTBLACK_EX}ㅡ{Fore.WHITE}"
 x_block = f"{Fore.BLACK}x {Fore.WHITE}"
 placed_x = f"{Fore.BLACK}X {Fore.WHITE}"
 rock = f"{Fore.LIGHTBLACK_EX}▃ {Fore.WHITE}"
-placed_rock = f"{Fore.LIGHTBLACK_EX}▃‎ {Fore.WHITE}"
+placed_rock = f"{Fore.LIGHTBLACK_EX}▄ {Fore.WHITE}"
 broken_block = f"{Fore.BLACK}- {Fore.WHITE}"
 spike = f"{Fore.RED}ㅅ{Fore.WHITE}"
 flat_spike = f"{Fore.RED}ㅡ{Fore.WHITE}"
-chest = f"{Fore.YELLOW}[]{Fore.WHITE}"
 looted_chest = f"{Fore.YELLOW}[ {Fore.WHITE}"
 heart = f"{Fore.RED}♡ {Fore.WHITE}"
-shop = f"{Fore.YELLOW}ㅠ{Fore.WHITE}"
-mineshaft = f"{Fore.YELLOW}⊓ {Fore.WHITE}"
-exit = f"{Fore.YELLOW}⊔ {Fore.WHITE}"
 ore = f"{Fore.YELLOW}◈ {Fore.WHITE}"
-home = f"{Fore.MAGENTA}♜ {Fore.WHITE}"
 empty = "  "
 
 loot = ["block", "gold", "hammer", "pickaxe", "heart"]
 loot_weights = [1, 5, 1, 1, 0.5]
+
+biomes = [
+  [grass, empty, x_block, spike, chest, shop, grave, pyramid],#plains
+  [grass, x_block, spike, chest, shop, grave],#dense forest
+  [grass, spike, x_block, grave, empty],#graveyard
+]
+
+biome_weights = [
+  [18, 2, 5, 1, 0.1, 0.01, 0.01, 0.005],#plains
+  [1, 1, 1, 0.5, 0.005, 0.005],#dense forest
+  [1, 0.5, 0.5, 0.5, 1],#graveyard
+]
 
 class Item:
   def __init__(self, name, number, value):
@@ -85,11 +101,18 @@ class World:
     self.ground = ground
     self.border = border
 
-  def get_visible_window(self, x, y):
+  def get_visible_window(self, x, y, biome):
     visible = []
     for i in range(y - self.radius, y + self.radius + 1):
       row = []
       for j in range(x - self.radius, x + self.radius + 1):
+        if self.border == 0 and self.ground == grass:
+          if (round(i/20), round(j/20)) not in biome:
+            biome[tuple([round(i/20), round(j/20)])] = random.randint(0, len(biomes) - 1)
+          self.choices = biomes[biome[tuple([round(i/20), round(j/20)])]]
+          self.weights = biome_weights[biome[tuple([round(i/20), round(j/20)])]]
+            
+
         if (i, j) not in self.board:
           if max(abs(i), abs(j)) > self.border and self.border != 0:
             block = x_block
@@ -180,40 +203,18 @@ def game():
   p = Player('ツ', coordinates=[0, 0, 1])
   u = World([x_block, empty, stone_floor, spike, ore, chest, shop, exit, rock],
             [4, 0.5, 1.5, 0.5, 0.5, 0.01, 0.005, 0.005, 1], 5, stone_floor, exit, 0)
-  g = World([grass, empty, x_block, spike, chest, shop, grave, pyramid],
-            [18, 2, 5, 1, 0.1, 0.01, 0.01, 0.005], 7, grass, mineshaft, 0)
+  g = World(biomes[0], biome_weights[0], 7, grass, mineshaft, 0)
   w = g
 
-  while True:  #main menu
-    clear()
+  b = dict()
+  b[tuple(p.coordinates)] = "plains"
 
-    print("welcome to the game!")
-    print("press 1 to play")
-    print("press 2 to view controls")
-    choice = input("")
-    if choice == "1":
-      break
-    elif choice == "2":
-      clear()
-      print("controls:")
-      print("WASD to move")
-      print("Q to mine")
-      print("E to interact")
-      print("12345 to place blocks")
-      print("")
-      print("display:")
-      print("(x,y)  Direction")
-      print("gold")
-      print("health")
-      print("tools")
-      print("")
-      input("press enter to go back ⏎")
-
+  menu(p)
+  
   while True:  #game loop      
-
     clear()
 
-    board = w.get_visible_window(p.coordinates[0], p.coordinates[1])
+    board = w.get_visible_window(p.coordinates[0], p.coordinates[1], b)
 
     #prints out the full display
     print(f"({p.coordinates[0]},{p.coordinates[1]*-1}) {p.direction}")
