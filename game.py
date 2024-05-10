@@ -207,7 +207,7 @@ def game():
   w = g
 
   b = dict()
-  b[tuple(p.coordinates)] = "plains"
+  b[tuple([0,0])] = 0
 
   menu(p)
   
@@ -284,26 +284,23 @@ def game():
 
         elif w.get_board_value(p.candidate_move) == mineshaft:
           w = u
-          p.candidate_move[0] = round(p.candidate_move[0] * 0.5)
-          p.candidate_move[1] = round(p.candidate_move[1] * 0.5)
           p.candidate_move[2] = 0
-          p.coordinates[2] = 0
-          w.set_board_value([p.candidate_move[0], p.candidate_move[1] - 1], w.ground)
-          w.set_board_value([p.candidate_move[0], p.candidate_move[1] + 1], w.ground)
-          w.set_board_value([p.candidate_move[0] - 1, p.candidate_move[1]], w.ground)
-          w.set_board_value([p.candidate_move[0] + 1, p.candidate_move[1]], w.ground)
+          p.candidate_move[0] = round(p.coordinates[0] / 2)
+          p.candidate_move[1] = round(p.coordinates[1] / 2)
+          
+          p.coordinates = p.candidate_move
 
         elif w.get_board_value(p.candidate_move) == exit:
+          p.candidate_move[2] = 1
+          p.candidate_move[0] *= 2
+          p.candidate_move[1] *= 2
+          p.coordinates = p.candidate_move
+          g.set_board_value(p.candidate_move, mineshaft)
           w = g
           w.set_board_value([p.candidate_move[0], p.candidate_move[1] - 1], w.ground)
           w.set_board_value([p.candidate_move[0], p.candidate_move[1] + 1], w.ground)
           w.set_board_value([p.candidate_move[0] - 1, p.candidate_move[1]], w.ground)
           w.set_board_value([p.candidate_move[0] + 1, p.candidate_move[1]], w.ground)
-          p.candidate_move[0] = p.candidate_move[0] * 2
-          p.candidate_move[1] = p.candidate_move[1] * 2
-          p.candidate_move[2] = 1
-          p.coordinates[2] = 1
-          w.set_board_value(p.candidate_move, mineshaft)
 
         elif w.get_board_value(p.candidate_move) == chest:
           chest_loot = random.choices(loot, weights=loot_weights, k=1)
@@ -393,7 +390,6 @@ def game():
 
         elif w.get_board_value(p.candidate_move) == x_block:
           p.candidate_move = p.coordinates
-          print("are you trying to break your skull?")
 
         elif w.get_board_value(p.candidate_move) == ore:
           p.candidate_move = p.coordinates
