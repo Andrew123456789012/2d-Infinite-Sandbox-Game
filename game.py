@@ -42,12 +42,14 @@ biomes = [
   [grass, empty, x_block, spike, chest, shop, grave, pyramid],#plains
   [grass, x_block, spike, chest, shop, grave],#dense forest
   [grass, spike, x_block, grave, empty],#graveyard
+  [0,1,2]#all biomes
 ]
 
 biome_weights = [
   [18, 2, 5, 1, 0.1, 0.01, 0.01, 0.005],#plains
   [1, 1, 1, 0.5, 0.005, 0.005],#dense forest
   [1, 0.5, 0.5, 0.5, 1],#graveyard
+  [1, 0.5, 0.1]#all biomes
 ]
 
 class Item:
@@ -107,17 +109,20 @@ class World:
       row = []
       for j in range(x - self.radius, x + self.radius + 1):
         if self.border == 0 and self.ground == grass:
-          if (round(i/20), round(j/20)) not in biome:
-            biome[tuple([round(i/20), round(j/20)])] = random.randint(0, len(biomes) - 1)
-          self.choices = biomes[biome[tuple([round(i/20), round(j/20)])]]
-          self.weights = biome_weights[biome[tuple([round(i/20), round(j/20)])]]
+          biome_location = (round(i/20), round(j/20))
+          if biome_location not in biome:
             
+            biome[biome_location] = random.choices(biomes[-1], weights=biome_weights[-1], k=1)[0]
+            
+          self.choices = biomes[biome[biome_location]]
+          self.weights = biome_weights[biome[biome_location]]
+
 
         if (i, j) not in self.board:
           if max(abs(i), abs(j)) > self.border and self.border != 0:
             block = x_block
           else:
-            block = random.choices(self.choices, weights = self.weights)[0]
+            block = random.choices(self.choices, weights = self.weights, k=1)[0]
           self.board[i, j] = block
         row.append(self.board[i, j])
       visible.append(row)
@@ -177,7 +182,7 @@ def center_to_range(center, radius):
                                                      center[1] + radius))
 
 
-def death(p, w, board):
+def death(p, w, board, g):
   clear()
   print(f"({p.coordinates[0]}, {p.coordinates[1] * -1})")
   print(f"GOLD: {p.gold}")
@@ -187,11 +192,17 @@ def death(p, w, board):
   print("-" * (4 * w.radius + 4))
   display(board, center_to_range(p.coordinates, w.radius), [p], p.coordinates[2])
   print("-" * (4 * w.radius + 4))
+  w = p.house if p.house is not None else g
   print("you died (x_x)")
   input("press enter to respawn")
+  if p.house is None:
+    w = p.house
+    p.coordinates = [6,0]
+  else:
+    w = g
+    p.coordinates = [0,0]
   p.health = p.max_health
   p.gold = 0
-  p.coordinates = [0, 0, 1]
   p.direction = "N"
   p.pickaxes = round(p.pickaxes * 0.5) + 1
   p.hammers = round(p.hammers * 0.5) + 1
@@ -207,10 +218,10 @@ def game():
   w = g
 
   b = dict()
-  b[tuple([0,0])] = 0
+  b[(0,0)] = 0
 
   menu(p)
-  
+
   while True:  #game loop      
     clear()
 
@@ -223,7 +234,8 @@ def game():
     print(f"SHOVELS: {p.shovels}")
     print(f"HAMMERS: {p.hammers}  PICKAXES: {p.pickaxes}")
     print("-" * (4 * w.radius + 4))
-    display(board, center_to_range(p.coordinates, w.radius), [p], p.coordinates[2])
+    if board is not None:
+      display(board, center_to_range(p.coordinates, w.radius), [p], p.coordinates[2])
     print("-" * (4 * w.radius + 4))
     print(f"{i._bag[0].name} {i._bag[1].name} {i._bag[2].name} {i._bag[3].name} {i._bag[4].name}")
     print(f"{i._bag[0].number} {i._bag[1].number} {i._bag[2].number} {i._bag[3].number} {i._bag[4].number}")
@@ -287,7 +299,7 @@ def game():
           p.candidate_move[2] = 0
           p.candidate_move[0] = round(p.coordinates[0] / 2)
           p.candidate_move[1] = round(p.coordinates[1] / 2)
-          
+
           p.coordinates = p.candidate_move
 
         elif w.get_board_value(p.candidate_move) == exit:
@@ -413,6 +425,5 @@ def game():
         p.coordinates = p.candidate_move
 
     if p.health == 0:
-      death(p, w, board)
-      w = g
+      death(p, w, board, g)
       i._bag = [Item(None, 0, 0)] * 5
